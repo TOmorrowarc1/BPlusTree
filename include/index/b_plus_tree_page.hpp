@@ -1,7 +1,7 @@
-#ifndef B_PLUS_TREE_PAGE_HPP
-#define B_PLUS_TREE_PAGE_HPP
+#pragma once
 #include "config.hpp"
 #include <cstring>
+
 namespace bpt {
 
 #define TEMPLATE                                                               \
@@ -12,16 +12,16 @@ namespace bpt {
 
 class TreePage {
 public:
-  enum class PageType : bool { LEAF = false, INTERNAL };
+  enum class PageType { LEAF = false, INTERNAL };
 
 private:
-  int size_;
-  int max_size_;
+  int32_t size_;
+  int32_t max_size_;
   PageType page_type_;
 
 public:
   TreePage() : size_(0), max_size_(0), page_type_(PageType::LEAF) {}
-  TreePage(int maxsize, PageType page_type)
+  TreePage(int32_t maxsize, PageType page_type)
       : size_(0), max_size_(maxsize), page_type_(page_type) {}
   TreePage(const TreePage &other) = delete;
   ~TreePage() = default;
@@ -30,12 +30,12 @@ public:
   auto GetPageType() const -> PageType { return page_type_; }
   void SetPageType(PageType page_type) { page_type_ = page_type; }
 
-  auto GetSize() const -> int { return size_; }
-  void SetSize(int size) { size_ = size; }
+  auto GetSize() const -> int32_t { return size_; }
+  void SetSize(int32_t size) { size_ = size; }
 
-  auto GetMaxSize() const -> int { return max_size_; }
-  void SetMaxSize(int size) { max_size_ = size; }
-  auto GetMinSize() const -> int { return max_size_ >> 1; }
+  auto GetMaxSize() const -> int32_t { return max_size_; }
+  void SetMaxSize(int32_t size) { max_size_ = size; }
+  auto GetMinSize() const -> int32_t { return max_size_ >> 1; }
 };
 /*————————————————————————————————————————————————————————————————————————————————————————————————————————*/
 TEMPLATE
@@ -47,31 +47,31 @@ private:
 
 public:
   LeafPage() = delete;
-  LeafPage(int maxsize = PAGE_MAX_SIZE)
+  LeafPage(int32_t maxsize = PAGE_MAX_SIZE)
       : TreePage(maxsize, PageType::LEAF), next_page_id_(INVALID_PAGE_ID) {}
   LeafPage(const LeafPage &other) = delete;
 
   auto GetNextPageId() const -> page_id_t { return next_page_id_; };
   void SetNextPageId(page_id_t next_page_id) { next_page_id_ = next_page_id; }
 
-  auto KeyAt(int index) const -> KeyType { return key_array_[index]; }
-  auto ValueAt(int index) const -> ValueType { return value_array_[index]; }
-  auto KeyIndex(const KeyType &target) const -> int;
+  auto KeyAt(int32_t index) const -> KeyType { return key_array_[index]; }
+  auto ValueAt(int32_t index) const -> ValueType { return value_array_[index]; }
+  auto KeyIndex(const KeyType &target) const -> int32_t;
 
-  auto InsertInPage(int index, const KeyType &target_key,
-                    const ValueType &target_value) -> int;
+  auto InsertInPage(int32_t index, const KeyType &target_key,
+                    const ValueType &target_value) -> int32_t;
   auto SplitPage(LeafPage *empty) -> KeyType;
 
-  auto DeleteInPage(int index) -> int;
+  auto DeleteInPage(int32_t index) -> int32_t;
   auto BorrowFromPage(LeafPage *sibling, bool sibling_right) -> KeyType;
   void MergePage(LeafPage *sibling, bool sibling_right);
 };
 
 TEMPLATE
-auto LEAF_PAGE_TYPE::KeyIndex(const KeyType &target) const -> int {
-  int left = 0;
-  int right = GetSize();
-  int middle = 0;
+auto LEAF_PAGE_TYPE::KeyIndex(const KeyType &target) const -> int32_t {
+  int32_t left = 0;
+  int32_t right = GetSize();
+  int32_t middle = 0;
   while (left < right) {
     middle = (left + right) >> 1;
     if (KeyComparator{}(key_array_[middle], target) < 0) {
@@ -84,8 +84,8 @@ auto LEAF_PAGE_TYPE::KeyIndex(const KeyType &target) const -> int {
 }
 
 TEMPLATE
-auto LEAF_PAGE_TYPE::InsertInPage(int index, const KeyType &target_key,
-                                  const ValueType &target_value) -> int {
+auto LEAF_PAGE_TYPE::InsertInPage(int32_t index, const KeyType &target_key,
+                                  const ValueType &target_value) -> int32_t {
   std::memmove(key_array_ + index + 1, key_array_ + index,
                (GetSize() - index) * sizeof(KeyType));
   key_array_[index] = target_key;
@@ -110,7 +110,7 @@ auto LEAF_PAGE_TYPE::SplitPage(LeafPage *empty) -> KeyType {
 }
 
 TEMPLATE
-auto LEAF_PAGE_TYPE::DeleteInPage(int index) -> int {
+auto LEAF_PAGE_TYPE::DeleteInPage(int32_t index) -> int32_t {
   std::memmove(key_array_ + index, key_array_ + index + 1,
                (GetSize() - index - 1) * sizeof(KeyType));
   std::memmove(value_array_ + index, value_array_ + index + 1,
@@ -170,20 +170,20 @@ private:
 
 public:
   InternalPage() = delete;
-  InternalPage(int max_size) : TreePage(max_size, PageType::INTERNAL){};
+  InternalPage(int32_t max_size) : TreePage(max_size, PageType::INTERNAL){};
   InternalPage(const InternalPage &other) = delete;
 
-  auto KeyAt(int index) const -> KeyType { return key_array_[index]; }
-  void SetKeyAt(int index, const KeyType &key) { key_array_[index] = key; }
-  auto ValueAt(int index) const -> ValueType { return value_array_[index]; }
-  auto KeyIndex(const KeyType &key) const -> int;
+  auto KeyAt(int32_t index) const -> KeyType { return key_array_[index]; }
+  void SetKeyAt(int32_t index, const KeyType &key) { key_array_[index] = key; }
+  auto ValueAt(int32_t index) const -> ValueType { return value_array_[index]; }
+  auto KeyIndex(const KeyType &key) const -> int32_t;
 
-  auto InsertInPage(int index, const KeyType &target_key,
-                    const ValueType &page_id) -> int;
-  auto InsertInPage(int index, const ValueType &page_id) -> int;
+  auto InsertInPage(int32_t index, const KeyType &target_key,
+                    const ValueType &page_id) -> int32_t;
+  auto InsertInPage(int32_t index, const ValueType &page_id) -> int32_t;
   auto SplitPage(InternalPage *empty) -> KeyType;
 
-  auto DeleteInPage(int index) -> int;
+  auto DeleteInPage(int32_t index) -> int32_t;
   auto BorrowFromPage(InternalPage *sibling, const KeyType &middle,
                       bool sibling_right) -> KeyType;
   void MergePage(InternalPage *sibling, const KeyType &middle,
@@ -191,10 +191,10 @@ public:
 };
 
 TEMPLATE
-auto INTERNAL_PAGE_TYPE::KeyIndex(const KeyType &key) const -> int {
-  int left = 1;
-  int right = GetSize();
-  int middle = 0;
+auto INTERNAL_PAGE_TYPE::KeyIndex(const KeyType &key) const -> int32_t {
+  int32_t left = 1;
+  int32_t right = GetSize();
+  int32_t middle = 0;
   while (left < right) {
     middle = (left + right) >> 1;
     if (KeyComparator{}(key_array_[middle], key) <= 0) {
@@ -207,8 +207,8 @@ auto INTERNAL_PAGE_TYPE::KeyIndex(const KeyType &key) const -> int {
 }
 
 TEMPLATE
-auto INTERNAL_PAGE_TYPE::InsertInPage(int index, const KeyType &target_key,
-                                      const ValueType &page_id) -> int {
+auto INTERNAL_PAGE_TYPE::InsertInPage(int32_t index, const KeyType &target_key,
+                                      const ValueType &page_id) -> int32_t {
   std::memmove(key_array_ + index + 1, key_array_ + index,
                (GetSize() - index) * sizeof(KeyType));
   key_array_[index] = target_key;
@@ -219,8 +219,8 @@ auto INTERNAL_PAGE_TYPE::InsertInPage(int index, const KeyType &target_key,
   return GetSize();
 }
 TEMPLATE
-auto INTERNAL_PAGE_TYPE::InsertInPage(int index, const ValueType &page_id)
-    -> int {
+auto INTERNAL_PAGE_TYPE::InsertInPage(int32_t index, const ValueType &page_id)
+    -> int32_t {
   value_array_[0] = page_id;
   SetSize(GetSize() + 1);
   return GetSize();
@@ -240,7 +240,7 @@ auto INTERNAL_PAGE_TYPE::SplitPage(InternalPage *empty) -> KeyType {
 }
 
 TEMPLATE
-auto INTERNAL_PAGE_TYPE::DeleteInPage(int index) -> int {
+auto INTERNAL_PAGE_TYPE::DeleteInPage(int32_t index) -> int32_t {
   std::memmove(key_array_ + index, key_array_ + index + 1,
                (GetSize() - index - 1) * sizeof(KeyType));
   std::memmove(value_array_ + index, value_array_ + index + 1,
@@ -297,4 +297,3 @@ void INTERNAL_PAGE_TYPE::MergePage(InternalPage *sibling, const KeyType &middle,
 }
 
 } // namespace bpt
-#endif

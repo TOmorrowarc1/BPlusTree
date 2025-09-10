@@ -1,20 +1,19 @@
-#ifndef B_PLUS_TREE_HPP
-#define B_PLUS_TREE_HPP
-
+#pragma once
 #include "b_plus_tree_page.hpp"
 #include "buffer_pool_manager.hpp"
 #include "iterator.hpp"
+
 namespace bpt {
 
 #define BPT_TYPE BPlusTree<KeyType, ValueType, KeyComparator>
 struct Trace {
   PageGuard pages_trace[50];
-  int place_trace[50] = {0};
-  int levels = 0;
+  int32_t place_trace[50] = {0};
+  int32_t levels = 0;
 };
 
 struct HeaderPage {
-  int root_page_id_ = INVALID_PAGE_ID;
+  int32_t root_page_id_ = INVALID_PAGE_ID;
   bool is_exist = false;
 };
 
@@ -26,10 +25,10 @@ class BPlusTree {
 
 private:
   BufferPoolManager *bpm_;
-  int leaf_max_size_;
-  int internal_max_size_;
-  int leaf_min_size_;
-  int internal_min_size_;
+  int32_t leaf_max_size_;
+  int32_t internal_max_size_;
+  int32_t leaf_min_size_;
+  int32_t internal_min_size_;
   page_id_t header_page_id_;
 
   void FindPath(Trace &trace, const KeyType &key) const;
@@ -42,8 +41,8 @@ private:
 public:
   explicit BPlusTree(page_id_t header_page_id,
                      BufferPoolManager *buffer_pool_manager,
-                     int leaf_max_size = PAGE_MAX_SIZE,
-                     int internal_max_size = PAGE_MAX_SIZE - 1);
+                     int32_t leaf_max_size = PAGE_MAX_SIZE,
+                     int32_t internal_max_size = PAGE_MAX_SIZE - 1);
 
   auto GetValue(const KeyType &key, std::vector<ValueType> *result) -> bool;
   auto Insert(const KeyType &key, const ValueType &value) -> bool;
@@ -54,8 +53,8 @@ public:
 
 TEMPLATE
 BPT_TYPE::BPlusTree(page_id_t header_page_id,
-                    BufferPoolManager *buffer_pool_manager, int leaf_max_size,
-                    int internal_max_size)
+                    BufferPoolManager *buffer_pool_manager,
+                    int32_t leaf_max_size, int32_t internal_max_size)
     : bpm_(buffer_pool_manager), leaf_max_size_(leaf_max_size),
       internal_max_size_(internal_max_size + 1),
       header_page_id_(header_page_id) {
@@ -86,7 +85,7 @@ auto BPT_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result)
     cursor_pointer = read_guard.As<Internal>();
   }
   auto cursor_leaf_pointer = read_guard.As<Leaf>();
-  int cursor = cursor_leaf_pointer->KeyIndex(key);
+  int32_t cursor = cursor_leaf_pointer->KeyIndex(key);
   if (cursor >= cursor_leaf_pointer->GetSize() ||
       KeyComparator{}(cursor_leaf_pointer->KeyAt(cursor), key) != 0) {
     return false;
@@ -141,7 +140,7 @@ auto BPT_TYPE::Insert(const KeyType &key, const ValueType &value) -> bool {
   ++trace.levels;
   if (trace.place_trace[0] == INVALID_PAGE_ID) {
     // The tree is empty.
-    int new_leaf = bpm_->NewPage();
+    int32_t new_leaf = bpm_->NewPage();
     auto root_guard = bpm_->VisitPage(new_leaf, false);
     auto cursor_leaf_pointer = root_guard.AsMut<Leaf>();
     new (cursor_leaf_pointer) Leaf(leaf_max_size_);
@@ -152,13 +151,13 @@ auto BPT_TYPE::Insert(const KeyType &key, const ValueType &value) -> bool {
   /*Situation 2: the tree is not empty.*/
   FindPath(trace, key);
   auto cursor_leaf_pointer = trace.pages_trace[trace.levels].AsMut<Leaf>();
-  int cursor = cursor_leaf_pointer->KeyIndex(key);
+  int32_t cursor = cursor_leaf_pointer->KeyIndex(key);
   if (cursor < cursor_leaf_pointer->GetSize() &&
       KeyComparator{}(cursor_leaf_pointer->KeyAt(cursor), key) == 0) {
     return false;
   }
   /*Here comes the adjustment after insert.*/
-  int number = cursor_leaf_pointer->InsertInPage(cursor, key, value);
+  int32_t number = cursor_leaf_pointer->InsertInPage(cursor, key, value);
   std::pair<KeyType, page_id_t> info;
   if (number >= leaf_max_size_) {
     info = SplitLeafNode(cursor_leaf_pointer);
@@ -200,7 +199,7 @@ auto BPT_TYPE::Insert(const KeyType &key, const ValueType &value) -> bool {
 TEMPLATE
 auto BPT_TYPE::SelectSibling(Internal *parent, const KeyType &key,
                              PageGuard &result) -> bool {
-  int location = parent->KeyIndex(key) - 1;
+  int32_t location = parent->KeyIndex(key) - 1;
   bool result_right = false;
   if (location == 0) {
     result = bpm_->VisitPage(parent->ValueAt(1), false);
@@ -231,12 +230,12 @@ void BPT_TYPE::Remove(const KeyType &key) {
   FindPath(trace, key);
   /*Situation 2: the tree is not empty.*/
   auto cursor_leaf_pointer = trace.pages_trace[trace.levels].AsMut<Leaf>();
-  int cursor = cursor_leaf_pointer->KeyIndex(key);
+  int32_t cursor = cursor_leaf_pointer->KeyIndex(key);
   if (cursor >= cursor_leaf_pointer->GetSize() ||
       KeyComparator{}(cursor_leaf_pointer->KeyAt(cursor), key) != 0) {
     return;
   }
-  int number = cursor_leaf_pointer->DeleteInPage(cursor);
+  int32_t number = cursor_leaf_pointer->DeleteInPage(cursor);
   /*Here comes the adjustment after delete.*/
   if (number >= leaf_min_size_ || trace.levels == 1) {
     if (number == 0) {
@@ -255,13 +254,13 @@ void BPT_TYPE::Remove(const KeyType &key) {
     KeyType temp = cursor_leaf_pointer->BorrowFromPage(sibling.AsMut<Leaf>(),
                                                        sibling_right);
     cursor_parent->SetKeyAt(trace.place_trace[trace.levels] +
-                                static_cast<int>(sibling_right),
+                                static_cast<int32_t>(sibling_right),
                             temp);
   } else {
     cursor_leaf_pointer->MergePage(sibling.AsMut<Leaf>(), sibling_right);
-    /*It is the place we start to deal with internal pages.*/
+    /*It is the place we start to deal with Internal pages.*/
     number = cursor_parent->DeleteInPage(trace.place_trace[trace.levels] +
-                                         static_cast<int>(sibling_right));
+                                         static_cast<int32_t>(sibling_right));
     while (number < internal_min_size_ && trace.levels > 1) {
       guard_child = std::move(trace.pages_trace[trace.levels]);
       cursor_child = guard_child.AsMut<Internal>();
@@ -272,20 +271,21 @@ void BPT_TYPE::Remove(const KeyType &key) {
         KeyType temp = cursor_child->BorrowFromPage(
             sibling.AsMut<Internal>(),
             cursor_parent->KeyAt(trace.place_trace[trace.levels] +
-                                 static_cast<int>(sibling_right)),
+                                 static_cast<int32_t>(sibling_right)),
             sibling_right);
         cursor_parent->SetKeyAt(trace.place_trace[trace.levels] +
-                                    static_cast<int>(sibling_right),
+                                    static_cast<int32_t>(sibling_right),
                                 temp);
         number = internal_max_size_;
       } else {
         cursor_child->MergePage(
             sibling.AsMut<Internal>(),
             cursor_parent->KeyAt(trace.place_trace[trace.levels] +
-                                 static_cast<int>(sibling_right)),
+                                 static_cast<int32_t>(sibling_right)),
             sibling_right);
-        number = cursor_parent->DeleteInPage(trace.place_trace[trace.levels] +
-                                             static_cast<int>(sibling_right));
+        number =
+            cursor_parent->DeleteInPage(trace.place_trace[trace.levels] +
+                                        static_cast<int32_t>(sibling_right));
       }
     }
     if (trace.levels == 1 && cursor_parent->GetSize() == 1) {
@@ -308,13 +308,13 @@ void BPT_TYPE::Remove(const KeyType &key, const ValueType &value) {
   FindPath(trace, key);
   /*Situation 2: the tree is not empty.*/
   auto cursor_leaf_pointer = trace.pages_trace[trace.levels].AsMut<Leaf>();
-  int cursor = cursor_leaf_pointer->KeyIndex(key);
+  int32_t cursor = cursor_leaf_pointer->KeyIndex(key);
   if (cursor >= cursor_leaf_pointer->GetSize() ||
       KeyComparator{}(cursor_leaf_pointer->KeyAt(cursor), key) != 0 ||
       cursor_leaf_pointer->ValueAt(cursor) != value) {
     return;
   }
-  int number = cursor_leaf_pointer->DeleteInPage(cursor);
+  int32_t number = cursor_leaf_pointer->DeleteInPage(cursor);
   /*Here comes the adjustment after delete.*/
   if (number >= leaf_min_size_ || trace.levels == 1) {
     if (number == 0) {
@@ -333,13 +333,13 @@ void BPT_TYPE::Remove(const KeyType &key, const ValueType &value) {
     KeyType temp = cursor_leaf_pointer->BorrowFromPage(sibling.AsMut<Leaf>(),
                                                        sibling_right);
     cursor_parent->SetKeyAt(trace.place_trace[trace.levels] +
-                                static_cast<int>(sibling_right),
+                                static_cast<int32_t>(sibling_right),
                             temp);
   } else {
     cursor_leaf_pointer->MergePage(sibling.AsMut<Leaf>(), sibling_right);
-    /*It is the place we start to deal with internal pages.*/
+    /*It is the place we start to deal with Internal pages.*/
     number = cursor_parent->DeleteInPage(trace.place_trace[trace.levels] +
-                                         static_cast<int>(sibling_right));
+                                         static_cast<int32_t>(sibling_right));
     while (number < internal_min_size_ && trace.levels > 1) {
       guard_child = std::move(trace.pages_trace[trace.levels]);
       cursor_child = guard_child.AsMut<Internal>();
@@ -350,20 +350,21 @@ void BPT_TYPE::Remove(const KeyType &key, const ValueType &value) {
         KeyType temp = cursor_child->BorrowFromPage(
             sibling.AsMut<Internal>(),
             cursor_parent->KeyAt(trace.place_trace[trace.levels] +
-                                 static_cast<int>(sibling_right)),
+                                 static_cast<int32_t>(sibling_right)),
             sibling_right);
         cursor_parent->SetKeyAt(trace.place_trace[trace.levels] +
-                                    static_cast<int>(sibling_right),
+                                    static_cast<int32_t>(sibling_right),
                                 temp);
         number = internal_max_size_;
       } else {
         cursor_child->MergePage(
             sibling.AsMut<Internal>(),
             cursor_parent->KeyAt(trace.place_trace[trace.levels] +
-                                 static_cast<int>(sibling_right)),
+                                 static_cast<int32_t>(sibling_right)),
             sibling_right);
-        number = cursor_parent->DeleteInPage(trace.place_trace[trace.levels] +
-                                             static_cast<int>(sibling_right));
+        number =
+            cursor_parent->DeleteInPage(trace.place_trace[trace.levels] +
+                                        static_cast<int32_t>(sibling_right));
       }
     }
     if (trace.levels == 1 && cursor_parent->GetSize() == 1) {
@@ -388,7 +389,7 @@ auto BPT_TYPE::KeyBegin(const KeyType &key) -> Iterator {
     cursor_pointer = read_guard.As<Internal>();
   }
   auto cursor_leaf_pointer = read_guard.AsMut<Leaf>();
-  int cursor = cursor_leaf_pointer->KeyIndex(key);
+  int32_t cursor = cursor_leaf_pointer->KeyIndex(key);
   Iterator result(bpm_, cursor_leaf_pointer, cursor);
   if (cursor >= cursor_leaf_pointer->GetSize()) {
     ++result;
@@ -397,4 +398,3 @@ auto BPT_TYPE::KeyBegin(const KeyType &key) -> Iterator {
 }
 
 } // namespace bpt
-#endif
