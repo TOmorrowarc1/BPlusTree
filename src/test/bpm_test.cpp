@@ -1,7 +1,8 @@
-#include "index/b_plus_tree.hpp"
+#include "b_plus_tree.hpp"
 #include <cstring>
 #include <iostream>
 #include <string>
+
 class MyString {
 private:
   char content[65] = {0};
@@ -156,7 +157,7 @@ int main() {
       key.value = ~key.value;
       while (!iter.IsEnd() && KeyComparator{}((*iter).first, key) <= 0) {
         ++count;
-        std::cout << (*iter).second << ' ';
+        std::cout << (*iter).second << " ";
         ++iter;
       }
       if (count == 0) {

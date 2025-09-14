@@ -6,10 +6,10 @@ PageGuard::PageGuard() : is_valid_(false) {}
 
 PageGuard::PageGuard(char *pointer, page_id_t page_in, frame_id_t frame_in,
                      FrameManager *frame_manager)
-    : pointer_(pointer), page_in_(page_in), frame_in_(frame_in),
-      frame_manager_(frame_manager), is_valid_(true) {}
+    : pointer_(pointer), frame_manager_(frame_manager), page_in_(page_in),
+      frame_in_(frame_in), is_valid_(true) {}
 
-PageGuard::PageGuard(PageGuard &&other) {
+PageGuard::PageGuard(PageGuard &&other) noexcept {
   if (other.is_valid_) {
     pointer_ = std::exchange(other.pointer_, nullptr);
     frame_manager_ = std::exchange(other.frame_manager_, nullptr);
@@ -44,14 +44,6 @@ PageGuard::~PageGuard() {
 }
 
 auto PageGuard::GetPageID() -> page_id_t { return page_in_; }
-
-template <typename T> auto PageGuard::As() -> const T * {
-  return reinterpret_cast<const T *>(pointer_);
-}
-
-template <typename T> auto PageGuard::AsMut() -> T * {
-  return reinterpret_cast<T *>(pointer_);
-}
 
 void BufferPoolManager::InitPage(page_id_t target_page) {
   data_file_.seekp(target_page * page_size_);

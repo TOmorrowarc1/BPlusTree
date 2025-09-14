@@ -11,7 +11,7 @@ FrameManager::~FrameManager() = default;
 auto FrameManager::EvictFrame() -> std::pair<frame_id_t, page_id_t> {
   frame_id_t victim = INVALID_FRMAE_ID;
   int time = current_time_stamp_;
-  for (int i = 0; i < frame_info_.size(); ++i) {
+  for (uint32_t i = 0; i < frame_info_.size(); ++i) {
     if (frame_info_[i].pin_count_ == 0 && frame_info_[i].history_ <= time) {
       victim = i;
       time = frame_info_[i].history_;

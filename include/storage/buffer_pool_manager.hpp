@@ -23,8 +23,12 @@ public:
   ~PageGuard();
 
   auto GetPageID() -> page_id_t;
-  template <typename T> auto As() -> const T *;
-  template <typename T> auto AsMut() -> T *;
+  template <typename T> auto As() -> const T * {
+    return reinterpret_cast<const T *>(pointer_);
+  }
+  template <typename T> auto AsMut() -> T * {
+    return reinterpret_cast<T *>(pointer_);
+  }
 };
 
 class BufferPoolManager {
