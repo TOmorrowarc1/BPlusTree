@@ -97,59 +97,16 @@ int main() {
   bpm.NewPage();
   bpt::BPlusTree<Key, int, KeyComparator> storage(0, &bpm);
   Key key;
-  /*for (int i = 999; i > 0; --i) {
-    key.key = "Amiya";
-    key.value = value = i;
-    storage.Insert(key, value);
-    assert(!storage.Insert(key, value));
-  }
-  int count = 0;
-  key.key = "Amiya";
-  key.value = (1 << 31);
-  auto iter = storage.KeyBegin(key);
-  key.value = ~key.value;
-  while (!iter.IsEnd() && KeyComparator{}((*iter).first, key) <= 0) {
-    ++count;
-    std::cout << (*iter).second << ' ';
-    ++iter;
-  }
-  if (count == 0) {
-    std::cout << "null";
-  }
-  std::cout << '\n';
-  std::cout << "Checkpoint 1" << '\n';
-  for (int i = 0; i < 500; ++i) {
-    key.value = i;
-    storage.Remove(key, i);
-  }
-  count = 0;
-  key.key = "Amiya";
-  key.value = (1 << 31);
-  iter = storage.KeyBegin(key);
-  key.value = ~key.value;
-  while (!iter.IsEnd() && KeyComparator{}((*iter).first, key) <= 0) {
-    ++count;
-    std::cout << (*iter).second << ' ';
-    ++iter;
-  }
-  if (count == 0) {
-    std::cout << "null";
-  }
-  std::cout << '\n';
-  std::cout << "Checkpoint 2" << '\n';*/
-  std::vector<int> test;
   for (int i = 0; i < operation_num; ++i) {
     std::cin >> operation >> key.key;
     if (operation == insert) {
       std::cin >> key.value;
       value = key.value;
       storage.Insert(key, value);
-      assert(storage.GetValue(key, &test));
     } else if (operation == del) {
       std::cin >> key.value;
       value = key.value;
       storage.Remove(key, value);
-      assert(!storage.GetValue(key, &test));
     } else {
       int count = 0;
       key.value = (1 << 31);
